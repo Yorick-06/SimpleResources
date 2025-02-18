@@ -3,13 +3,13 @@ This library mod focuses on simplifying loading of resources from data packs, re
 It can be installed client-side only, server-side only or both, but does not provide any content on its own. It allows
 loading of not only resources serialized by minecrafts codec system, but also other types of files. It also allows adding
 custom ```DynamicOps``` so your new codec-serialized resources can be stored in your favourite format. Also adds the
-```ClassFieldsCodec``` which uses reflection to create a codec from fields defined in the class.
+```ClassFieldsCodec``` which uses reflection to create a codec from fields defined in a class.
 
 # Resource types
 - Config
 - Reloadable config
-- Config tree
-- Reloadable config tree
+- Resource tree config
+- Reloadable resource tree config
 - Data pack resource
 - Resource pack resource
 
@@ -25,7 +25,7 @@ This registers a new data pack resource using fabrics api.
 ```
 ResourceKey<Map<Identifier, List<Item>>> itemCollections = SimpleResources.datapackResource(Identifier.of(MOD_ID, "item_collections"), Registries.ITEM.getCodec().listOf());
 ```
-It also has an overloaded method for adding a reload listener which gets invoked when a data pack gets reloaded.
+It also has an overloaded method for adding a reload listener which gets invoked when data packs gets reloaded.
 ```
 Consumer<Map<Identifier, List<Item>>> reloadListener = collections -> System.out.println("Loaded " + collections.size() + " item collections.");
 ResourceKey<Map<Identifier, List<Item>>> itemCollections = SimpleResources.datapackResource(Identifier.of(MOD_ID, "item_collections"), Registries.ITEM.getCodec().listOf(), reloadListener);
@@ -41,7 +41,7 @@ For registering use
 ```
 SimpleResources.resourcepackResource(Identifier, Codec);
 ```
-It also has an overloaded method for adding a reload listener which gets invoked when a resource pack gets reloaded.
+It also has an overloaded method for adding a reload listener which gets invoked when resource packs get reloaded.
 ```
 SimpleResources.resourcepackResource(Identifier, Codec, Consumer);
 ```
@@ -53,8 +53,8 @@ A simple config can be created just by specifying an id, a default value factory
 
 - The identifier is used for creating the path, the namespace of the identifier should be your mod id, since the file will
   be stored in ```config/identifier_namespace/```. The identifier's path is the name, but it can include ```/``` to act
-  as a directory separator. The path does not need to specify the file extension and by default the ```.json``` extension
-  is used. Custom extensions can also be used, but a file parser for them needs to be registered. By default, only ```.json```
+  as a directory separator. If the path does not specify the file extension the ```.json``` extension is used. Custom 
+  extensions can also be used, but ```DynamicOps``` for them need to be registered. By default, only ```.json```
   files are supported. 
 - The default value factory is invoked any time the config cannot be loaded, either due to an exception while loading the
   config, or because the file is missing. If the file is missing it is created and the default value is written into it.
@@ -70,7 +70,7 @@ and a codec. The parameters also work the same as while creating a simple config
 ```
 ReloadableResourceKey<List<Item>> specialItems = Configs.simpleReloadable(Identifier.of(MOD_ID, "special_items"), List::of, Registries.ITEM.getCodec().listOf());
 ```
-It also has an overloaded method for adding a reload listener which gets invoked when the data get reloaded.
+It also has an overloaded method for adding a reload listener which gets invoked when the config gets reloaded (includes first load).
 ```
 Consumer<List<Item>> reloadListener = items -> System.out.println("Reloaded my special items");
 ReloadableResourceKey<List<Item>> specialItems = SimpleResources.simple(Identifier.of(MOD_ID, "special_items"), List::of, Registries.ITEM.getCodec().listOf(), reloadListener);
@@ -79,17 +79,16 @@ The ```ReloadableResourceKey``` can be used to get the currently loaded value.
 ```
 List<Item> loadedSpecialItems = specialItems.getValue();
 ```
-But it can also be used to force a reload of the config. Reloading requires a ```Consumer<Exception>``` which gets invoked
-when an exception is thrown during the reload.
+This config gets loaded once on game launch and every time it is forced to reload either by using the /reloadSimpleResources
+or /reloadSimpleServerResources based on the environment. The ```reload()``` method can also be used to force a reload of
+the config. Reloading requires a ```Consumer<Exception>``` which gets invoked when an exception is thrown during the reload.
 ```
 Consumer<Exception> errorHandler = exception -> System.out.println("Error while reloading special items " + exception.getMessage());
 specialItems.reload(errorHandler);
 ```
-This config gets loaded once on game launch and every time it is forced to reload either by using the ```reload()``` method
-or by using the /reloadSimpleResources or /reloadSimpleServerResources based on the environment.
 
 ## Creating a resource tree config
-A file tree config works similarly to a data pack or resource pack resource - it goes through the specified directory and
+A resource tree config works similarly to a data pack or resource pack resource - it goes through the specified directory and
 all its subdirectories and tries to load every file it finds. The main reason to use this instead of a data
 pack or resource pack resource is that it gets loaded immediately after getting created, which is much earlier in the loading
 process than a data pack or a resource pack. This allows the values from those files to impact things such as registries.
@@ -287,7 +286,7 @@ ClassFieldsCodec.builder(MyConfig.class, MyConfig::new);
 ```
 The builder has two methods used for adding codecs.
 ```
-codecBuilder.withCodec(Codec<V> codec, Class<V> clazz)
+codecBuilder.withCodec(Codec<?> codec, Class<?> clazz)
 ```
 which allows you to add a codec for a class. It can also be used to overwrite the default codec for a class. Since by default
 the codec used for ```String``` is ```Codec.STRING``` it allows empty strings, if your configs values cannot be empty, you can use
@@ -297,10 +296,10 @@ codecBuilder.withCodec(Codecs.NON_EMPTY_STRING, String.class)
 This will force all fields of type String in your class to get serialized by the non-empty string codec.
 The second method
 ```
-codecBuilder.withCodec(Codec<V> codec, String... fieldIds)
+codecBuilder.withCodec(Codec<?> codec, String... fieldIds)
 ```
-Can be used to specify codecs based on the field id, this is useful if fields of the same class use different codecs or
-if  The best example is any list codec, since using the previous method would serialize all lists with the same codec.
+Can be used to specify codecs based on the field id, this is useful if fields of the same class use different codecs.
+The best example is any list codec, since using the previous method would serialize all lists with the same codec.
 This works fine if you have lists with the same type parameters
 ```
 public final List<Item> myItems = List.of();
@@ -321,7 +320,7 @@ since the ```fieldIds``` parameter is varargs, multiple field ids can easily be 
 codecBuilder.withCodec(Registries.ITEM.getCodec().listOf(), "myItems");
 codecBuilder.withCodec(ItemStack.CODEC.listOf(), "myStacks", "myStacks2", "myStacks3");
 ```
-The id-based method takes priority over the specification for the class which means that if you have a lot of lists of
+The id-based method takes priority over the specification for the class, which means that if you have a lot of lists of
 the same type and only one list of a different type instead of writing them all out you can do
 ```
 //serialize all fields of type list with the item codec
@@ -329,7 +328,7 @@ codecBuilder.withCodec(Registries.ITEM.getCodec().listOf(), List.class);
 //but the field with the id "myStacks" using a different codec
 codecBuilder.withCodec(ItemStack.CODEC.listOf(), "myStacks");
 ```
-Another useful method is specifying the post processor which gets invoked when a values are assigned to a newly created
+Another useful method is specifying the post processor which gets invoked when values are assigned to a newly created
 instance. This can be used to modify the class or check for conflicting values 
 ```
 Function<MyConfig, DataResult<MyConfig>> postProcessor = config -> {
@@ -345,6 +344,8 @@ To receive the actual codec just use
 ```
 Codec<MyConfig> codec = codecBuilder.build();
 ```
+
+## Only serializing fields of a superclass
 When creating the codec using ```ClassFieldsCodec.builder(Class, Supplier)``` or ```ClassFieldsCodec.of(Class, Supplier)```
 the supplier can provide a subclass of the provided class.
 
@@ -360,7 +361,7 @@ Annotations can be used in the serialized class itself to further modify some be
 
 ### @FieldId
 This annotation changes the id of the field, by default the id is the fields name. The id is used when serializing/deserializing
-the codec and when specifying the codec with ```ClassFieldsCodec.withCodec(Codec<V> codec, String... fieldIds)```
+the codec and when specifying the codec with ```ClassFieldsCodec.withCodec(Codec<?> codec, String... fieldIds)```
 
 ### @Ignore
 This annotation marks the field as ignored, this means that it will get ignored for both serialization and deserialization.
