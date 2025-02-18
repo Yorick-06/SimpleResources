@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "simpleresources",
+	"version": "${version}",
+	"name": "SimpleResources",
+	"description": "This mod focuses on simplifying loading of resources from data packs, resource packs and the config directory",
+	"authors": [
+		"Yorick-06"
+	],
+	"license": "MIT",
+	"icon": "assets/simpleresources/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"cz.yorick.SimpleResourcesCommon"
+		],
+		"client": [
+			"cz.yorick.SimpleResourcesClient"
+		]
+	},
+	"mixins": [
+		"simpleresources.mixins.json",
+		{
+			"config": "simpleresources.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
