@@ -5,6 +5,23 @@ loading of not only resources serialized by minecrafts codec system, but also ot
 custom ```DynamicOps``` so your new codec-serialized resources can be stored in your favourite format. Also adds the
 ```ClassFieldsCodec``` which uses reflection to create a codec from fields defined in a class.
 
+You can add it as a dependency by adding
+```
+repositories {
+	maven { url 'https://maven.nucleoid.xyz' }
+}
+
+dependencies {
+	modImplementation "maven.modrinth:simple-resources:1.0.0"
+}
+```
+Since it is a small library, you can include it in your mods jar file
+```
+dependencies {
+	modImplementation include("maven.modrinth:simple-resources:1.0.0")
+}
+```
+
 # Resource types
 - Config
 - Reloadable config
