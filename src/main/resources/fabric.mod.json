@@ -3,10 +3,13 @@
 	"id": "simpleresources",
 	"version": "${version}",
 	"name": "SimpleResources",
-	"description": "This mod focuses on simplifying loading of resources from data packs, resource packs and the config directory",
+	"description": "Focuses on simplifying the creation of data driven content",
 	"authors": [
 		"Yorick-06"
 	],
+	"contact": {
+		"sources": "https://github.com/Yorick-06/SimpleResources"
+	},
 	"license": "MIT",
 	"icon": "assets/simpleresources/icon.png",
 	"environment": "*",
