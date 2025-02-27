@@ -17,11 +17,14 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class ResourceTreeLoader<T> implements SimpleResource.Loader<Map<String, T>> {
     private final ResourceFileLoader<T> fileLoader;
+    private final Predicate<String> shouldStripExtension;
     public ResourceTreeLoader(ResourceReadWriter<T> readWriter) {
         this.fileLoader = new ResourceFileLoader<>(() -> null, readWriter);
+        this.shouldStripExtension = readWriter::shouldStripFileExtension;
     }
 
     @Override
@@ -53,7 +56,12 @@ public class ResourceTreeLoader<T> implements SimpleResource.Loader<Map<String, 
                     //converts D:/server/config/namespace/resource_name/file.extension -> file.extension
                     //converts D:/server/config/namespace/resource_name/directory/file.extension -> directory/file.extension
                     Path relativePath = path.relativize(file);
-                    results.put(Util.pathToString(relativePath), loadedValue);
+                    String path = Util.pathToString(relativePath);
+                    if(ResourceTreeLoader.this.shouldStripExtension.test(Util.getFileExtension(path))) {
+                        path = Util.removeFileExtension(path);
+                    }
+
+                    results.put(Util.removeFileExtension(path), loadedValue);
                     return FileVisitResult.CONTINUE;
                 }
 

@@ -46,16 +46,7 @@ public class ReloadConfigResourcesCommand<S extends CommandSource> {
     }
 
     private CompletableFuture<Suggestions> suggestConfigResource(CommandContext<S> context, SuggestionsBuilder builder) {
-        String input = builder.getInput();
-        if(input.endsWith(" ")) {
-            Util.getReloadableResourceKeys().forEach(key -> builder.suggest(key.toString()));
-            return builder.buildFuture();
-        }
-
-        String[] splitInput = input.split(" ");
-        String typing = splitInput[splitInput.length - 1];
-        Util.getReloadableResourceKeys().stream().map(Identifier::toString).filter(key -> key.startsWith(typing)).forEach(builder::suggest);
-        return builder.buildFuture();
+        return CommandUtil.suggestMatching(Util.getReloadableResourceKeys().stream().map(Identifier::toString).toList(), builder);
     }
 
     private int reloadAllConfigs(S source) {

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import cz.yorick.SimpleResourcesCommon;
 import cz.yorick.api.resources.ResourceKey;
 import cz.yorick.api.resources.ResourceReadWriter;
+import cz.yorick.api.resources.ResourceUtil;
 import cz.yorick.resources.Util;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -44,11 +45,16 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
         for(Map.Entry<Identifier, Resource> entry : resourceManager.findResources(resourceName, identifier -> true).entrySet()) {
             try {
                 Identifier originalKey = entry.getKey();
-                T parsed = readWriter.read(Util.getFileExtensionOrThrow(originalKey.getPath()), entry.getValue().getReader());
+                String fileExtension = Util.getFileExtensionOrThrow(originalKey.getPath());
+                T parsed = readWriter.read(fileExtension, entry.getValue().getReader());
                 //converts
                 //namespace:resource_name/file_name.extension -> namespace:file_name.extension
                 //namespace:resource_name/directory/file_name.extension -> namespace:directory/file_name.extension
                 Identifier loadedKey = originalKey.withPath(originalKey.getPath().substring(resourceName.length() + 1));
+                if(readWriter.shouldStripFileExtension(fileExtension)) {
+                    loadedKey = ResourceUtil.removeFileExtension(loadedKey);
+                }
+
                 if (results.containsKey(loadedKey)) {
                     throw new IllegalStateException("Duplicate data file ignored with ID " + loadedKey + " (path " + originalKey + ")");
                 }

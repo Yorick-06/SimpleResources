@@ -2,6 +2,11 @@ package cz.yorick.api.codec;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
+import cz.yorick.api.codec.annotations.FieldId;
+import cz.yorick.api.codec.annotations.Ignore;
+import cz.yorick.api.codec.annotations.IncludeParent;
+import cz.yorick.api.codec.annotations.OptionalField;
 import cz.yorick.codec.ClassFieldsReflectionCodec;
 import cz.yorick.resources.Util;
 
@@ -17,7 +22,7 @@ import java.util.function.Supplier;
  *   <li>Codecs for some classes are provided by default, but you can add your own and override the defaults with {@link ClassFieldsCodec.Builder#withCodec(Codec, Class)}</li>
  *   <li>If different codecs are needed for fields of the same type, {@link ClassFieldsCodec.Builder#withCodec(Codec, String...)}
  *   can be used. The string is the fields name, but you can mark a field with {@link FieldId} to change its id</li>
- *   <li>If a field does not need to be specified in the loaded data, you can use {@link Optional}</li>
+ *   <li>If a field does not need to be specified in the loaded data, you can use {@link OptionalField}</li>
  *   <li>If the fields of the classes parent class should also get serialized, mark the class with {@link IncludeParent}</li>
  * </ul>
  * */
@@ -40,6 +45,26 @@ public interface ClassFieldsCodec {
      * */
     static<T> Codec<T> of(Class<T> clazz, Supplier<T> defaultFactory) {
         return ClassFieldsReflectionCodec.of(clazz, defaultFactory, Map.of(), Map.of(), DataResult::success);
+    }
+
+    /**
+     * Creates the codec as a map codec with no extra options, the class needs to have a default, no-argument constructor,
+     * if your class needs to have a constructor with parameters, use {@link ClassFieldsCodec#of(Class, Supplier)}
+     * @param clazz Your class
+     * @return The codec created from the fields in the class
+     * */
+    static <T> MapCodec<T> ofMap(Class<T> clazz) {
+        return ofMap(clazz, Util.factoryFor(clazz));
+    }
+
+    /**
+     * Creates the codec as a map codec with no extra options
+     * @param clazz Your class
+     * @param defaultFactory The default factory for your class
+     * @return The codec created from the fields in the class
+     * */
+    static<T> MapCodec<T> ofMap(Class<T> clazz, Supplier<T> defaultFactory) {
+        return ClassFieldsReflectionCodec.ofMap(clazz, defaultFactory, Map.of(), Map.of(), DataResult::success);
     }
 
     /**
@@ -89,5 +114,10 @@ public interface ClassFieldsCodec {
          * Builds the codec
          * */
         Codec<T> build();
+
+        /**
+         * Builds the codec as a map codec
+         * */
+        MapCodec<T> buildMap();
     }
 }

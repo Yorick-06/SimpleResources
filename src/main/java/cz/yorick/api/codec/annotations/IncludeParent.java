@@ -1,4 +1,6 @@
-package cz.yorick.api.codec;
+package cz.yorick.api.codec.annotations;
+
+import cz.yorick.api.codec.ClassFieldsCodec;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

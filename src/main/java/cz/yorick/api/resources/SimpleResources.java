@@ -31,7 +31,7 @@ public interface SimpleResources {
      * a codec for serializing/deserializing the class.
      * */
     static <T> T config(Identifier configId, Supplier<T> defaultFactory, Codec<T> codec) {
-        return config(configId, defaultFactory, new CodecResourceReadWriter<>(codec));
+        return config(configId, defaultFactory, new CodecResourceReadWriter<>(codec, extension -> true));
     }
 
     /**
@@ -59,7 +59,7 @@ public interface SimpleResources {
      * a codec for serializing/deserializing the class
      * */
     static <T> ReloadableResourceKey<T> reloadableConfig(Identifier configId, Supplier<T> defaultFactory, Codec<T> codec, Consumer<T> reloadListener) {
-        return reloadableConfig(configId, defaultFactory, new CodecResourceReadWriter<>(codec), reloadListener);
+        return reloadableConfig(configId, defaultFactory, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener);
     }
 
     /**
@@ -77,7 +77,7 @@ public interface SimpleResources {
      * a codec for serializing/deserializing the class
      * */
     static <T> Map<String, T> resourceTree(Identifier resourceId, Codec<T> codec) {
-        return resourceTree(resourceId, new CodecResourceReadWriter<>(codec));
+        return resourceTree(resourceId, new CodecResourceReadWriter<>(codec, extension -> true));
     }
 
     /**
@@ -118,7 +118,7 @@ public interface SimpleResources {
      * a codec for serializing/deserializing the class
      * */
     static <T> ReloadableResourceKey<Map<String, T>> reloadableResourceTree(Identifier resourceId, Codec<T> codec, Consumer<Map<String, T>> reloadListener) {
-        return reloadableResourceTree(resourceId, new CodecResourceReadWriter<>(codec), reloadListener);
+        return reloadableResourceTree(resourceId, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener);
     }
 
     /**
@@ -143,7 +143,7 @@ public interface SimpleResources {
      * a codec for serializing/deserializing the class
      * */
     static<T> ResourceKey<Map<Identifier, T>> datapackResource(Identifier resourceId, Codec<T> codec, Consumer<Map<Identifier, T>> reloadListener) {
-        return datapackResource(resourceId, new CodecResourceReadWriter<>(codec), reloadListener);
+        return datapackResource(resourceId, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener);
     }
 
     /**
@@ -183,7 +183,7 @@ public interface SimpleResources {
      * a codec for serializing/deserializing the class
      * */
     static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, Codec<T> codec, Consumer<Map<Identifier, T>> reloadListener) {
-        return resourcepackResource(resourceId, new CodecResourceReadWriter<>(codec), reloadListener);
+        return resourcepackResource(resourceId, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener);
     }
 
     /**

@@ -17,11 +17,14 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
     private final Codec<T> codec;
-    public CodecResourceReadWriter(Codec<T> codec) {
+    private final Predicate<String> shouldStripFileExtension;
+    public CodecResourceReadWriter(Codec<T> codec, Predicate<String> shouldStripFileExtension) {
         this.codec = codec;
+        this.shouldStripFileExtension = shouldStripFileExtension;
     }
 
     @Override
@@ -44,6 +47,10 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
         parser.write(writer, data, this.codec);
     }
 
+    @Override
+    public boolean shouldStripFileExtension(String fileExtension) {
+        return this.shouldStripFileExtension.test(fileExtension);
+    }
 
     private static final HashMap<String, DynamicOpsParser<?>> dynamicOpsRegistry = new HashMap<>();
     static {

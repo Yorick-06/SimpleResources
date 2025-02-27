@@ -4,16 +4,19 @@ import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import cz.yorick.SimpleResourcesCommon;
-import cz.yorick.api.codec.Optional;
+import cz.yorick.api.codec.annotations.OptionalField;
 import cz.yorick.api.codec.*;
+import cz.yorick.api.codec.annotations.FieldId;
+import cz.yorick.api.codec.annotations.Ignore;
+import cz.yorick.api.codec.annotations.IncludeParent;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Unit;
 import net.minecraft.util.dynamic.Codecs;
 
 import java.lang.reflect.Field;
@@ -100,7 +103,7 @@ public class ClassFieldsReflectionCodec<C, T extends C> {
 
     private Pair<String, SerializableField> getFieldEntry(Field field) {
         String fieldId = getFieldId(field);
-        boolean required = field.getAnnotation(Optional.class) == null;
+        boolean required = field.getAnnotation(OptionalField.class) == null;
 
         Codec<?> overwriteCodec = this.codecOverwrites.get(fieldId);
         if(overwriteCodec != null) {
@@ -120,24 +123,10 @@ public class ClassFieldsReflectionCodec<C, T extends C> {
 
         //try to create a generic enum codec
         if(fieldClass.isEnum()) {
-            return Pair.of(fieldId, new SerializableField(field, enumCodec(fieldClass.asSubclass(Enum.class)), required));
+            return Pair.of(fieldId, new SerializableField(field, EnumCodec.of(fieldClass.asSubclass(Enum.class)), required));
         }
 
         throw new IllegalArgumentException("Could not get codec for field '" + field.getName() + "' no codec registered for class " + fieldClass.getName() + " or field id '" + fieldId + "'");
-    }
-
-    private<E extends Enum<E>> Codec<E> enumCodec(Class<E> enumClass) {
-        String validValues = "[" + String.join(", ", Arrays.stream(enumClass.getEnumConstants()).map(Enum::name).toList()) + "]";
-        return Codecs.NON_EMPTY_STRING.comapFlatMap(
-                string -> {
-                    try {
-                        return DataResult.success(Enum.valueOf(enumClass, string));
-                    } catch (Exception e) {
-                        return DataResult.error(() -> "The id '" + string + "' does not represent a valid value, valid values: " + validValues);
-                    }
-                },
-                Enum::name
-        );
     }
 
     private String getFieldId(Field field) {
@@ -156,8 +145,7 @@ public class ClassFieldsReflectionCodec<C, T extends C> {
     private Codec<?> getFieldCodec(String fieldName) {
         SerializableField field = this.classFields.get(fieldName);
         if(field == null) {
-            //just return the unit codec, error will get thrown later by createWithValues()
-            return Unit.CODEC;
+            throw new IllegalArgumentException("Attempted to get a codec for an unknown field '" + fieldName + "' - this should be filtered out by DelegatedDispatchedMapCodec and never happen!");
         }
 
         return field.codec();
@@ -204,9 +192,17 @@ public class ClassFieldsReflectionCodec<C, T extends C> {
     }
 
     public static<C, T extends C> Codec<T> of(Class<C> clazz, Supplier<T> defaultFactory, Map<Class<?>, Codec<?>> extraCodecs, Map<String, Codec<?>> codecOverwrites, Function<T, DataResult<T>> postProcessor) {
-        ClassFieldsReflectionCodec<C, T> fieldsCodec = new ClassFieldsReflectionCodec<>(clazz, defaultFactory, extraCodecs, codecOverwrites, postProcessor);
+        return ofMap(clazz, defaultFactory, extraCodecs, codecOverwrites, postProcessor).codec();
+        /*ClassFieldsReflectionCodec<C, T> fieldsCodec = new ClassFieldsReflectionCodec<>(clazz, defaultFactory, extraCodecs, codecOverwrites, postProcessor);
         Codec<Map<String, Object>> mapCodec = Codec.dispatchedMap(Codecs.NON_EMPTY_STRING, fieldsCodec::getFieldCodec);
-        return mapCodec.flatXmap(fieldsCodec::createWithValues, fieldsCodec::getValues);
+        return mapCodec.flatXmap(fieldsCodec::createWithValues, fieldsCodec::getValues);*/
+    }
+
+    public static<C, T extends C> MapCodec<T> ofMap(Class<C> clazz, Supplier<T> defaultFactory, Map<Class<?>, Codec<?>> extraCodecs, Map<String, Codec<?>> codecOverwrites, Function<T, DataResult<T>> postProcessor) {
+        ClassFieldsReflectionCodec<C, T> fieldsCodec = new ClassFieldsReflectionCodec<>(clazz, defaultFactory, extraCodecs, codecOverwrites, postProcessor);
+        //MapCodec<Map<String, Object>> objects = new DispatchedMapCodec<>(fieldsCodec.classFields.keySet(), fieldsCodec::getFieldCodec);
+        MapCodec<Map<String, Object>> objects = new DelegatedDispatchedMapCodec<>(fieldsCodec.classFields.keySet(), Codecs.NON_EMPTY_STRING, fieldsCodec::getFieldCodec);
+        return objects.flatXmap(fieldsCodec::createWithValues, fieldsCodec::getValues);
     }
 
     private record SerializableField(Field field, Codec<?> codec, boolean required) {
@@ -276,6 +272,11 @@ public class ClassFieldsReflectionCodec<C, T extends C> {
         @Override
         public Codec<T> build() {
             return ClassFieldsReflectionCodec.of(this.clazz, this.defaultFactory, this.extraCodecs, this.codecOverwrites, this.postProcessor != null ? this.postProcessor : DataResult::success);
+        }
+
+        @Override
+        public MapCodec<T> buildMap() {
+            return ClassFieldsReflectionCodec.ofMap(this.clazz, this.defaultFactory, this.extraCodecs, this.codecOverwrites, this.postProcessor != null ? this.postProcessor : DataResult::success);
         }
     }
 }
