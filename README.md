@@ -9,7 +9,10 @@ utilities for easing the development of data driven content
 You can add it as a dependency by adding
 ```
 repositories {
-	maven { url 'https://maven.nucleoid.xyz' }
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+	}
 }
 
 dependencies {
