@@ -6,6 +6,11 @@ loading of not only resources serialized by minecrafts codec system, but also ot
 custom ```DynamicOps``` so your new codec-serialized resources can be stored in your favourite format. Also adds other
 utilities for easing the development of data driven content
 
+Addons for extra formats (require >=2.1.0)
+
+- [Toml Resources](https://github.com/Yorick-06/TomlResources)
+- [YAML Resources](https://github.com/Yorick-06/YAMLResources)
+
 You can add it as a dependency by adding
 ```
 repositories {
@@ -16,13 +21,13 @@ repositories {
 }
 
 dependencies {
-	modImplementation "maven.modrinth:simple-resources:1.0.0"
+	modImplementation "maven.modrinth:simple-resources:2.1.0"
 }
 ```
 Since it is a small library, you can include it in your mods jar file
 ```
 dependencies {
-	modImplementation include("maven.modrinth:simple-resources:1.0.0")
+	modImplementation include("maven.modrinth:simple-resources:2.1.0")
 }
 ```
 
