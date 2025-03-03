@@ -40,7 +40,7 @@ public class ResourceFileLoader<T> implements SimpleResource.Loader<T> {
             }
 
             return this.readWriter.read(Util.getFileExtensionOrThrow(Util.pathToString(path)), new FileReader(file));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             errorHandler.accept(new ResourceParseException("Error while loading the file " + SimpleResource.Loader.getRelativePath(path), e));
             return this.defaultFactory.get();
         }

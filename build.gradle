@@ -17,7 +17,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"simpleresources" {
+		"simple-resources" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}

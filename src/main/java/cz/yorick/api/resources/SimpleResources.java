@@ -3,6 +3,8 @@ package cz.yorick.api.resources;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
+import cz.yorick.api.resources.ops.OpsReader;
+import cz.yorick.api.resources.ops.OpsWriter;
 import cz.yorick.resources.loader.CodecResourceReadWriter;
 import cz.yorick.resources.loader.ResourceFileLoader;
 import cz.yorick.resources.loader.ResourceTreeLoader;
@@ -203,7 +205,7 @@ public interface SimpleResources {
      * @param readerParser Function which parses the reader (JsonOps -> {@link com.google.gson.JsonParser#parseReader(Reader)}
      * @param writer A BiConsumer which writes the data into a file (JsonOps -> {@link cz.yorick.resources.loader.CodecResourceReadWriter#writeJson(Writer, JsonElement)}
      * */
-    static<T> void registerOps(String fileExtension, DynamicOps<T> ops, Function<Reader, T> readerParser, BiConsumer<Writer, T> writer) {
+    static<T> void registerOps(String fileExtension, DynamicOps<T> ops, OpsReader<T> readerParser, OpsWriter<T> writer) {
         CodecResourceReadWriter.registerOps(fileExtension, ops, readerParser, writer);
     }
 }

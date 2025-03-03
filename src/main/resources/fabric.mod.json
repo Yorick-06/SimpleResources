@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "simpleresources",
+	"id": "simple-resources",
 	"version": "${version}",
 	"name": "SimpleResources",
 	"description": "Focuses on simplifying the creation of data driven content",
@@ -8,10 +8,12 @@
 		"Yorick-06"
 	],
 	"contact": {
-		"sources": "https://github.com/Yorick-06/SimpleResources"
+		"sources": "https://github.com/Yorick-06/SimpleResources",
+		"homepage": "https://github.com/Yorick-06/SimpleResources",
+		"issues": "https://github.com/Yorick-06/SimpleResources/issues"
 	},
 	"license": "MIT",
-	"icon": "assets/simpleresources/icon.png",
+	"icon": "assets/simple-resources/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
@@ -22,9 +24,9 @@
 		]
 	},
 	"mixins": [
-		"simpleresources.mixins.json",
+		"simple-resources.mixins.json",
 		{
-			"config": "simpleresources.client.mixins.json",
+			"config": "simple-resources.client.mixins.json",
 			"environment": "client"
 		}
 	],
@@ -33,8 +35,5 @@
 		"minecraft": "~1.21.4",
 		"java": ">=21",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }

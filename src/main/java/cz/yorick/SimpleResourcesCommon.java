@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SimpleResourcesCommon implements ModInitializer {
-	public static final String MOD_ID = "simpleresources";
+	public static final String MOD_ID = "simple-resources";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	@Override

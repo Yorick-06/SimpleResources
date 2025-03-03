@@ -8,6 +8,7 @@ import cz.yorick.api.resources.ResourceUtil;
 import cz.yorick.resources.Util;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
@@ -22,7 +23,7 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
     private Map<Identifier, T> loadedValue = ImmutableMap.of();
     public MinecraftResource(Identifier id, ResourceReadWriter<T> readWriter, ResourceType resourceType, Consumer<Map<Identifier, T>> reloadListener) {
         this.reloadListener = reloadListener;
-        ResourceManagerHelper.get(resourceType).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+        ResourceManagerHelper.get(resourceType).registerReloadListener(id, wrapperLookup -> new SimpleSynchronousResourceReloadListener() {
             @Override
             public Identifier getFabricId() {
                 return id;
@@ -30,7 +31,7 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
 
             @Override
             public void reload(ResourceManager manager) {
-                parse(id.getPath(), manager, readWriter);
+                parse(id.getPath(), manager, readWriter, wrapperLookup);
             }
         });
     }
@@ -40,13 +41,13 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
         return this.loadedValue;
     }
 
-    private void parse(String resourceName, ResourceManager resourceManager, ResourceReadWriter<T> readWriter) {
+    private void parse(String resourceName, ResourceManager resourceManager, ResourceReadWriter<T> readWriter, RegistryWrapper.WrapperLookup wrapperLookup) {
         HashMap<Identifier, T> results = new HashMap<>();
         for(Map.Entry<Identifier, Resource> entry : resourceManager.findResources(resourceName, identifier -> true).entrySet()) {
             try {
                 Identifier originalKey = entry.getKey();
                 String fileExtension = Util.getFileExtensionOrThrow(originalKey.getPath());
-                T parsed = readWriter.read(fileExtension, entry.getValue().getReader());
+                T parsed = readWriter.read(fileExtension, entry.getValue().getReader(), wrapperLookup);
                 //converts
                 //namespace:resource_name/file_name.extension -> namespace:file_name.extension
                 //namespace:resource_name/directory/file_name.extension -> namespace:directory/file_name.extension
@@ -56,11 +57,12 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
                 }
 
                 if (results.containsKey(loadedKey)) {
-                    throw new IllegalStateException("Duplicate data file ignored with ID " + loadedKey + " (path " + originalKey + ")");
+                    SimpleResourcesCommon.LOGGER.warn("Duplicate data file ignored with ID " + loadedKey + " (path " + originalKey + ")");
+                    continue;
                 }
 
                 results.put(loadedKey, parsed);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 SimpleResourcesCommon.LOGGER.error("Error occurred while loading resource: " + entry.getKey().toString(), e);
             }
         }

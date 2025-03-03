@@ -180,12 +180,17 @@ public class ClassFieldsReflectionCodec<C, T extends C> {
     private DataResult<Map<String, Object>> getValues(T instance) {
         LinkedHashMap<String, Object> values = new LinkedHashMap<>();
         for (Map.Entry<String, SerializableField> entry : this.classFields.entrySet()) {
-            Object value = entry.getValue().get(instance);
-            if(value == null) {
-                return DataResult.error(() -> "Cannot serialize the field '" + entry.getKey() + "' because its value is null");
+            DataResult<Object> value = entry.getValue().get(instance);
+            if(value.isError()) {
+                return DataResult.error(() -> "Cannot serialize the field '" + entry.getKey() + "' - check the log for details");
             }
 
-            values.put(entry.getKey(), value);
+            //if the value is null, don't add it
+            if(value.getOrThrow() == null) {
+                continue;
+            }
+
+            values.put(entry.getKey(), value.getOrThrow());
         }
 
         return DataResult.success(values);
@@ -193,25 +198,21 @@ public class ClassFieldsReflectionCodec<C, T extends C> {
 
     public static<C, T extends C> Codec<T> of(Class<C> clazz, Supplier<T> defaultFactory, Map<Class<?>, Codec<?>> extraCodecs, Map<String, Codec<?>> codecOverwrites, Function<T, DataResult<T>> postProcessor) {
         return ofMap(clazz, defaultFactory, extraCodecs, codecOverwrites, postProcessor).codec();
-        /*ClassFieldsReflectionCodec<C, T> fieldsCodec = new ClassFieldsReflectionCodec<>(clazz, defaultFactory, extraCodecs, codecOverwrites, postProcessor);
-        Codec<Map<String, Object>> mapCodec = Codec.dispatchedMap(Codecs.NON_EMPTY_STRING, fieldsCodec::getFieldCodec);
-        return mapCodec.flatXmap(fieldsCodec::createWithValues, fieldsCodec::getValues);*/
     }
 
     public static<C, T extends C> MapCodec<T> ofMap(Class<C> clazz, Supplier<T> defaultFactory, Map<Class<?>, Codec<?>> extraCodecs, Map<String, Codec<?>> codecOverwrites, Function<T, DataResult<T>> postProcessor) {
         ClassFieldsReflectionCodec<C, T> fieldsCodec = new ClassFieldsReflectionCodec<>(clazz, defaultFactory, extraCodecs, codecOverwrites, postProcessor);
-        //MapCodec<Map<String, Object>> objects = new DispatchedMapCodec<>(fieldsCodec.classFields.keySet(), fieldsCodec::getFieldCodec);
         MapCodec<Map<String, Object>> objects = new DelegatedDispatchedMapCodec<>(fieldsCodec.classFields.keySet(), Codecs.NON_EMPTY_STRING, fieldsCodec::getFieldCodec);
         return objects.flatXmap(fieldsCodec::createWithValues, fieldsCodec::getValues);
     }
 
     private record SerializableField(Field field, Codec<?> codec, boolean required) {
-        private Object get(Object instance) {
+        private DataResult<Object> get(Object instance) {
             try {
-                return this.field.get(instance);
+                return DataResult.success(this.field.get(instance));
             } catch (IllegalAccessException e) {
                 SimpleResourcesCommon.LOGGER.error("Could not retrieve the value of config field '" + this.field.getName() + "'", e);
-                return null;
+                return DataResult.error(() -> "Could not retrieve the value of config field '" + this.field.getName() + "' - Check the log for more details");
             }
         }
 
