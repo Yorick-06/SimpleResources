@@ -1,5 +1,6 @@
 package cz.yorick.resources;
 
+import cz.yorick.SimpleResourcesCommon;
 import cz.yorick.resources.type.SimpleReloadableResource;
 import cz.yorick.resources.type.SimpleResource;
 import net.minecraft.util.Identifier;
@@ -74,6 +75,8 @@ public class Util {
            throw new IllegalArgumentException("Attempted to register a resource with a duplicate id '" + id + "'");
         }
 
+        //to make sure the main config which contains the preferred format is loaded
+        SimpleResourcesCommon.ensureRegistered();
         resources.put(id, config);
         if(config instanceof SimpleReloadableResource<?> reloadableResource) {
             reloadableResources.put(id, reloadableResource);
@@ -81,14 +84,22 @@ public class Util {
     }
 
     public static Collection<Identifier> getReloadableResourceKeys() {
-        return reloadableResources.keySet();
+        return List.copyOf(reloadableResources.keySet());
+    }
+
+    public static Collection<Identifier> getResourceKeys() {
+        return List.copyOf(resources.keySet());
     }
 
     public static Collection<SimpleReloadableResource<?>> getReloadableResources() {
-        return reloadableResources.values();
+        return List.copyOf(reloadableResources.values());
     }
 
     public static SimpleReloadableResource<?> getReloadableResource(Identifier id) {
         return reloadableResources.get(id);
+    }
+
+    public static SimpleResource<?> getResource(Identifier id) {
+        return resources.get(id);
     }
 }

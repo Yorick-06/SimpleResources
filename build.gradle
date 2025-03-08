@@ -11,6 +11,10 @@ base {
 }
 
 repositories {
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+	}
 }
 
 loom {
@@ -31,6 +35,14 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+	//for testing with toml
+	modImplementation "maven.modrinth:toml-resources:1.0.0"
+	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.4"
+
+	//for testing with yaml
+	modImplementation "maven.modrinth:yaml-resources:1.0.0"
+	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.4"
 }
 
 processResources {

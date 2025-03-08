@@ -11,12 +11,13 @@ import com.mojang.serialization.DynamicOps;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class JacksonOps implements DynamicOps<JsonNode> {
-    public static JacksonOps INSTANCE = new JacksonOps();
+    public static final JacksonOps INSTANCE = new JacksonOps();
 
     @Override
     public JsonNode empty() {
@@ -51,11 +52,11 @@ public class JacksonOps implements DynamicOps<JsonNode> {
 
     @Override
     public DataResult<Boolean> getBooleanValue(JsonNode input) {
-        if(!input.isBoolean()) {
-            return DataResult.error(() -> "No a boolean: " + input);
+        if(input != null && input.isBoolean()) {
+            return DataResult.success(input.booleanValue());
         }
 
-        return DataResult.success(input.booleanValue());
+        return DataResult.error(() -> "No a boolean: " + input);
     }
 
     @Override
@@ -65,7 +66,7 @@ public class JacksonOps implements DynamicOps<JsonNode> {
 
     @Override
     public DataResult<Number> getNumberValue(JsonNode input) {
-        if(input.isNumber()) {
+        if(input != null && input.isNumber()) {
             return DataResult.success(input.numberValue());
         }
         return DataResult.error(() -> "Not a number " + input);
@@ -96,7 +97,7 @@ public class JacksonOps implements DynamicOps<JsonNode> {
 
     @Override
     public DataResult<String> getStringValue(JsonNode input) {
-        if(input.isTextual()) {
+        if(input != null && input.isTextual()) {
             return DataResult.success(input.textValue());
         }
 
@@ -110,43 +111,42 @@ public class JacksonOps implements DynamicOps<JsonNode> {
 
     @Override
     public DataResult<JsonNode> mergeToList(JsonNode list, JsonNode value) {
-        if(!list.isArray()) {
-            return DataResult.error(() -> "Not a list: " + list);
+        if(list != null && list.isArray()) {
+            ArrayNode result = JsonNodeFactory.instance.arrayNode();
+            result.addAll((ArrayNode)list);
+            result.add(value);
+            return DataResult.success(result);
         }
 
-        ArrayNode result = JsonNodeFactory.instance.arrayNode();
-        result.addAll((ArrayNode)list);
-        result.add(value);
-        return DataResult.success(result);
+        return DataResult.error(() -> "Not a list: " + list);
     }
 
     @Override
     public DataResult<JsonNode> mergeToMap(JsonNode map, JsonNode key, JsonNode value) {
-        if (!key.isTextual()) {
+        if((map == null || !map.isObject()) && map != empty()) {
+            return DataResult.error(() -> "Not a map: " + map);
+        }
+
+        if(key == null || !key.isTextual()) {
             return DataResult.error(() -> "Map key is not a string: " + key);
         }
 
-        if(map != null) {
-            if (!map.isObject()) {
-                return DataResult.error(() -> "Not a map: " + map);
-            }
-
-            ((ObjectNode) map).set(key.asText(), value);
-            return DataResult.success(map);
+        ObjectNode result = JsonNodeFactory.instance.objectNode();
+        if(map != empty()) {
+            asStream(map.fields()).forEach(entry -> result.set(entry.getKey(), entry.getValue()));
         }
-
-        ObjectNode newMap = JsonNodeFactory.instance.objectNode();
-        newMap.set(key.textValue(), value);
-        return DataResult.success(newMap);
+        result.set(key.asText(), value);
+        return DataResult.success(result);
     }
 
     @Override
     public DataResult<Stream<Pair<JsonNode, JsonNode>>> getMapValues(JsonNode input) {
-        if(!input.isObject()) {
-            return DataResult.error(() -> "Not a map: " + input);
+        if(input != null && input.isObject()) {
+            return DataResult.success(asStream(input.fields()).map(entry -> Pair.of(JsonNodeFactory.instance.textNode(entry.getKey()), entry.getValue())));
+
         }
 
-        return DataResult.success(asStream(input.fields()).map(entry -> Pair.of(JsonNodeFactory.instance.textNode(entry.getKey()), entry.getValue())));
+        return DataResult.error(() -> "Not a map: " + input);
     }
 
     @Override
@@ -158,11 +158,11 @@ public class JacksonOps implements DynamicOps<JsonNode> {
 
     @Override
     public DataResult<Stream<JsonNode>> getStream(JsonNode input) {
-        if(!input.isArray()) {
-            return DataResult.error(() -> "Not a list: " + input);
+        if(input != null && input.isArray()) {
+            return DataResult.success(asStream(input.iterator()));
         }
 
-        return DataResult.success(asStream(input.iterator()));
+        return DataResult.error(() -> "Not a list: " + input);
     }
 
     @Override
@@ -174,12 +174,13 @@ public class JacksonOps implements DynamicOps<JsonNode> {
 
     @Override
     public JsonNode remove(JsonNode input, String key) {
-        if(input instanceof ObjectNode node) {
-            node.remove(key);
-            return node;
+        if(input != null && input.isObject()) {
+            ObjectNode result = JsonNodeFactory.instance.objectNode();
+            asStream(input.fields()).filter(entry -> !Objects.equals(entry.getKey(), key)).forEach(entry -> result.set(entry.getKey(), entry.getValue()));
+            return result;
         }
 
-        throw new IllegalArgumentException("Not a map: " + input);
+        return input;
     }
 
     private static <T> Stream<T> asStream(Iterator<T> iterator) {

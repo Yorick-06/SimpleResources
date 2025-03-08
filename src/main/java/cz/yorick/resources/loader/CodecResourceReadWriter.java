@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
@@ -80,6 +82,14 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
         return ImmutableMap.copyOf(extraOps);
     }
 
+    public static Set<String> getRegisteredExtensions() {
+        return new HashSet<>(dynamicOpsRegistry.keySet());
+    }
+
+    public static DynamicOpsParser<?> getParser(String extension) {
+        return dynamicOpsRegistry.get(extension);
+    }
+
     private static void writeJson(Writer writer, JsonElement data) {
         try {
             JsonWriter jsonWriter = new JsonWriter(writer);
@@ -108,6 +118,12 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
 
         public DynamicOpsParser<T> withLookup(RegistryWrapper.WrapperLookup lookup) {
             return new DynamicOpsParser<>(lookup.getOps(this.ops), this.readerParser, this.writer);
+        }
+
+        public <T2> void convertTo(CodecResourceReadWriter.DynamicOpsParser<T2> other, Reader reader, Writer writer) throws Exception {
+            T result = this.readerParser.read(reader);
+            T2 converted = this.ops.convertTo(other.ops(), result);
+            other.writer().write(writer, converted);
         }
     }
 }

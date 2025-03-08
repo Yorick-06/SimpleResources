@@ -1,24 +1,33 @@
 package cz.yorick.resources.type;
 
 import cz.yorick.SimpleResourcesCommon;
+import cz.yorick.api.resources.ResourceReadWriter;
 import cz.yorick.resources.ResourceParseException;
 import cz.yorick.resources.Util;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
 public class SimpleResource<T> {
     private final Path path;
+    private final String name;
     private final Loader<T> loader;
     private T loadedValue;
     public SimpleResource(Identifier configId, Loader<T> loader) {
-        Identifier validatedId = loader.getValidatedId(configId);
-        this.path = FabricLoader.getInstance().getConfigDir().resolve(toPath(validatedId));
+        Path filePath = Path.of(configId.getNamespace());
+        String[] path = configId.getPath().split("/");
+        for (int i = 0; i < path.length - 1; i++) {
+            filePath = filePath.resolve(path[i]);
+        }
+
+        this.path = FabricLoader.getInstance().getConfigDir().resolve(filePath);
         this.loader = loader;
-        Util.registerConfig(validatedId, this);
-        this.load(error -> SimpleResourcesCommon.LOGGER.error("Error while loading the resource " + validatedId, error));
+        this.name = path[path.length -1];
+        Util.registerConfig(configId, this);
+        this.load(error -> SimpleResourcesCommon.LOGGER.error("Error while loading the resource " + configId, error));
     }
 
     public T getLoadedValue() {
@@ -26,22 +35,21 @@ public class SimpleResource<T> {
     }
 
     protected void load(Consumer<ResourceParseException> errorHandler) {
-        this.loadedValue = this.loader.load(this.path, errorHandler);
+        this.loadedValue = this.loader.load(this.loader.getFilePath(this.path, this.name), errorHandler);
     }
 
-    private static Path toPath(Identifier id) {
-        Path filePath = Path.of(id.getNamespace());
-        String[] path = id.getPath().split("/");
-        for (String pathPart : path) {
-            filePath = filePath.resolve(pathPart);
-        }
+    public ResourceReadWriter<?> getReadWriter() {
+        return this.loader.getReadWriter();
+    }
 
-        return filePath;
+    public File getFile() {
+        return this.loader.getFilePath(this.path, this.name).toFile();
     }
 
     public interface Loader<T> {
         T load(Path path, Consumer<ResourceParseException> errorHandler);
-        Identifier getValidatedId(Identifier id);
+        Path getFilePath(Path path, String name);
+        ResourceReadWriter<?> getReadWriter();
         static Path getRelativePath(Path fullPath) {
             return FabricLoader.getInstance().getConfigDir().relativize(fullPath);
         }

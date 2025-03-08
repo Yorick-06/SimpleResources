@@ -5,6 +5,7 @@ import cz.yorick.SimpleResourcesCommon;
 import cz.yorick.api.resources.ResourceKey;
 import cz.yorick.api.resources.ResourceReadWriter;
 import cz.yorick.api.resources.ResourceUtil;
+import cz.yorick.resources.ErrorUtil;
 import cz.yorick.resources.Util;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -56,14 +57,14 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
                     loadedKey = ResourceUtil.removeFileExtension(loadedKey);
                 }
 
-                if (results.containsKey(loadedKey)) {
-                    SimpleResourcesCommon.LOGGER.warn("Duplicate data file ignored with ID " + loadedKey + " (path " + originalKey + ")");
+                if (results.containsKey(loadedKey) && !fileExtension.equals(SimpleResourcesCommon.getPreferredFormat())) {
+                    ErrorUtil.reloadWarning("Duplicate data file ignored with ID " + loadedKey + " (path " + originalKey + ")");
                     continue;
                 }
 
                 results.put(loadedKey, parsed);
             } catch (Throwable e) {
-                SimpleResourcesCommon.LOGGER.error("Error occurred while loading resource: " + entry.getKey().toString(), e);
+                ErrorUtil.reloadError("Error occurred while loading resource: " + entry.getKey().toString(), e);
             }
         }
 

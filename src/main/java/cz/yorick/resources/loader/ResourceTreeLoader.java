@@ -5,7 +5,6 @@ import cz.yorick.api.resources.ResourceReadWriter;
 import cz.yorick.resources.ResourceParseException;
 import cz.yorick.resources.Util;
 import cz.yorick.resources.type.SimpleResource;
-import net.minecraft.util.Identifier;
 
 import java.io.File;
 import java.io.IOException;
@@ -83,7 +82,12 @@ public class ResourceTreeLoader<T> implements SimpleResource.Loader<Map<String, 
     }
 
     @Override
-    public Identifier getValidatedId(Identifier id) {
-        return id;
+    public ResourceReadWriter<?> getReadWriter() {
+        return this.fileLoader.getReadWriter();
+    }
+
+    @Override
+    public Path getFilePath(Path path, String name) {
+        return path.resolve(name);
     }
 }
