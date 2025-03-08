@@ -1,18 +1,14 @@
 package cz.yorick.mixin;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.JsonOps;
 import cz.yorick.SimpleResourcesCommon;
 import cz.yorick.api.resources.ResourceUtil;
 import cz.yorick.resources.ErrorUtil;
 import cz.yorick.resources.loader.CodecResourceReadWriter;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryOps;
 import net.minecraft.resource.JsonDataLoader;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceFinder;
@@ -28,19 +24,15 @@ import java.util.Map;
 
 @Mixin(JsonDataLoader.class)
 public class JsonDataLoaderMixin {
-    @Inject(method = "load(Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/registry/RegistryKey;Lcom/mojang/serialization/DynamicOps;Lcom/mojang/serialization/Codec;Ljava/util/Map;)V", at = @At("TAIL"))
-    private static <T> void load(ResourceManager manager, RegistryKey<? extends Registry<T>> registryRef, DynamicOps<JsonElement> ops, Codec<T> codec, Map<Identifier, T> results, CallbackInfo info) {
-        if(ops instanceof RegistryOps<JsonElement> registryOps) {
-            CodecResourceReadWriter.getExtraOps().forEach((extension, parser) -> loadCustom(manager, new ResourceFinder(RegistryKeys.getPath(registryRef), "." + extension), parser.registryOps(registryOps), codec, results));
-        } else {
-            throw new IllegalArgumentException("JsonDataLoaderMixin received a non-registry codec! should never happen!");
-        }
+    @Inject(method = "load(Lnet/minecraft/resource/ResourceManager;Ljava/lang/String;Lcom/google/gson/Gson;Ljava/util/Map;)V", at = @At("TAIL"))
+    private static void load(ResourceManager manager, String resource, Gson gson, Map<Identifier, JsonElement> results, CallbackInfo info) {
+        CodecResourceReadWriter.getExtraOps().forEach((extension, parser) -> loadCustom(manager, new ResourceFinder(resource, "." + extension), parser, results));
     }
 
-    private static <T> void loadCustom(ResourceManager resourceManager, ResourceFinder finder, CodecResourceReadWriter.DynamicOpsParser<?> parser, Codec<T> codec, Map<Identifier, T> results) {
+    private static void loadCustom(ResourceManager resourceManager, ResourceFinder finder, CodecResourceReadWriter.DynamicOpsParser<?> parser, Map<Identifier, JsonElement> results) {
         for(Map.Entry<Identifier, Resource> entry : finder.findResources(resourceManager).entrySet()) {
             try {
-                T parsed = parser.parse(entry.getValue().getReader(), codec);
+                JsonElement parsed = parser.readAs(JsonOps.INSTANCE, entry.getValue().getReader());
                 Identifier loadedKey = finder.toResourceId(entry.getKey());
                 if (results.containsKey(loadedKey) && !SimpleResourcesCommon.getPreferredFormat().equals(ResourceUtil.getFileExtension(entry.getKey()))) {
                     ErrorUtil.reloadWarning("Duplicate data file ignored with ID " + loadedKey + " (path " + entry.getKey() + ")");
@@ -56,11 +48,7 @@ public class JsonDataLoaderMixin {
 
     //inject to both possible LOGGER.error()
     @WrapOperation(
-            method = {
-                    "load(Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/resource/ResourceFinder;Lcom/mojang/serialization/DynamicOps;Lcom/mojang/serialization/Codec;Ljava/util/Map;)V",
-                    //the lambda which handles parse errors
-                    "method_63567(Lnet/minecraft/util/Identifier;Lnet/minecraft/util/Identifier;Lcom/mojang/serialization/DataResult$Error;)V"
-            },
+            method = "load(Lnet/minecraft/resource/ResourceManager;Ljava/lang/String;Lcom/google/gson/Gson;Ljava/util/Map;)V",
             at = @At(
                     value = "INVOKE",
                     target = "Lorg/slf4j/Logger;error(Ljava/lang/String;[Ljava/lang/Object;)V",

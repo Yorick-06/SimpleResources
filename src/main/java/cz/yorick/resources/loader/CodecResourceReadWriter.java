@@ -125,5 +125,9 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
             T2 converted = this.ops.convertTo(other.ops(), result);
             other.writer().write(writer, converted);
         }
+
+        public <T2> T2 readAs(DynamicOps<T2> otherOps, Reader reader) throws Exception {
+            return this.ops.convertTo(otherOps, this.readerParser.read(reader));
+        }
     }
 }
