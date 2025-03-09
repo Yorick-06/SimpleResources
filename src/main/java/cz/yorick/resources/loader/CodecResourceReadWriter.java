@@ -10,8 +10,6 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import cz.yorick.SimpleResourcesCommon;
 import cz.yorick.api.resources.ResourceReadWriter;
-import cz.yorick.api.resources.ops.OpsReader;
-import cz.yorick.api.resources.ops.OpsWriter;
 import net.minecraft.registry.RegistryOps;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.JsonHelper;
@@ -125,5 +123,13 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
             T2 converted = this.ops.convertTo(other.ops(), result);
             other.writer().write(writer, converted);
         }
+    }
+
+    public interface OpsReader<T> {
+        T read(Reader reader) throws Exception;
+    }
+
+    public interface OpsWriter<T> {
+        void write(Writer writer, T data) throws Exception;
     }
 }

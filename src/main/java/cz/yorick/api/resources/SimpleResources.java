@@ -1,10 +1,7 @@
 package cz.yorick.api.resources;
 
-import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
-import cz.yorick.api.resources.ops.OpsReader;
-import cz.yorick.api.resources.ops.OpsWriter;
 import cz.yorick.resources.loader.CodecResourceReadWriter;
 import cz.yorick.resources.loader.ResourceFileLoader;
 import cz.yorick.resources.loader.ResourceTreeLoader;
@@ -14,8 +11,6 @@ import cz.yorick.resources.type.SimpleResource;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 
-import java.io.Reader;
-import java.io.Writer;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -195,18 +190,5 @@ public interface SimpleResources {
      * */
     static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, ResourceReadWriter<T> readWriter, Consumer<Map<Identifier, T>> reloadListener, Identifier... dependencies) {
         return new MinecraftResource<>(resourceId, readWriter, ResourceType.CLIENT_RESOURCES, reloadListener, dependencies);
-    }
-
-    /**
-     * Registers dynamic ops for a file extension, this allows you to use that format for all codec resources parsed by this mod,
-     * works for files in the config directory, data packs and resource packs. - by default only {@link com.mojang.serialization.JsonOps} are added
-     * @param <T> The base class of your data format (JsonOps -> {@link com.google.gson.JsonElement})
-     * @param fileExtension The file extension which the ops should parse (JsonOps -> "json")
-     * @param ops The dynamic ops instance (JsonOps -> {@link com.mojang.serialization.JsonOps#INSTANCE})
-     * @param readerParser Function which parses the reader (JsonOps -> {@link com.google.gson.JsonParser#parseReader(Reader)}
-     * @param writer A BiConsumer which writes the data into a file (JsonOps -> {@link cz.yorick.resources.loader.CodecResourceReadWriter#writeJson(Writer, JsonElement)}
-     * */
-    static<T> void registerOps(String fileExtension, DynamicOps<T> ops, OpsReader<T> readerParser, OpsWriter<T> writer) {
-        CodecResourceReadWriter.registerOps(fileExtension, ops, readerParser, writer);
     }
 }
