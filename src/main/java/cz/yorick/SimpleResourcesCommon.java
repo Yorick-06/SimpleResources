@@ -4,11 +4,14 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import cz.yorick.api.FileTypeInitializer;
 import cz.yorick.api.resources.ReloadableResourceKey;
 import cz.yorick.api.resources.SimpleResources;
 import cz.yorick.command.SimpleResourcesServerCommand;
+import cz.yorick.resources.loader.CodecResourceReadWriter;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.dynamic.Codecs;
@@ -32,9 +35,15 @@ public class SimpleResourcesCommon implements ModInitializer {
 		});
 	}
 
+	//forces the extra file types and main config to load,
+	//this is called either in the entrypoint or when a
+	//mod attempts to load a config
 	public static void ensureRegistered() {
 		if(!loadedConfig) {
 			loadedConfig = true;
+			FabricLoader.getInstance().invokeEntrypoints(MOD_ID + ":file_type", FileTypeInitializer.class,
+					initializer -> CodecResourceReadWriter.registerOps(initializer.getExtension(), initializer.getOps(), initializer::read, initializer::write)
+			);
 			MapCodec<Pair<String, Boolean>> codec = RecordCodecBuilder.mapCodec(instance -> instance.group(
 				Codecs.NON_EMPTY_STRING.fieldOf("preferred_format").forGetter(Pair::getFirst),
 				Codec.BOOL.fieldOf("broadcast_reload_errors").forGetter(Pair::getSecond)

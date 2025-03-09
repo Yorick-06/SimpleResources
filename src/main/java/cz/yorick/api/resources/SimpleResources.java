@@ -134,18 +134,18 @@ public interface SimpleResources {
     }
 
     /**
-     * Overload of {@link SimpleResources#datapackResource(Identifier, Codec, Consumer)}, but without a reload listener
+     * Overload of {@link SimpleResources#datapackResource(Identifier, Codec, Consumer, Identifier[])}, but without a reload listener
      * */
-    static<T> ResourceKey<Map<Identifier, T>> datapackResource(Identifier resourceId, Codec<T> codec) {
-        return datapackResource(resourceId, codec, newValues -> {});
+    static<T> ResourceKey<Map<Identifier, T>> datapackResource(Identifier resourceId, Codec<T> codec, Identifier... dependencies) {
+        return datapackResource(resourceId, codec, newValues -> {}, dependencies);
     }
 
     /**
-     * Overload of {@link SimpleResources#datapackResource(Identifier, ResourceReadWriter, Consumer)}, which takes in
+     * Overload of {@link SimpleResources#datapackResource(Identifier, ResourceReadWriter, Consumer, Identifier[])}, which takes in
      * a codec for serializing/deserializing the class
      * */
-    static<T> ResourceKey<Map<Identifier, T>> datapackResource(Identifier resourceId, Codec<T> codec, Consumer<Map<Identifier, T>> reloadListener) {
-        return datapackResource(resourceId, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener);
+    static<T> ResourceKey<Map<Identifier, T>> datapackResource(Identifier resourceId, Codec<T> codec, Consumer<Map<Identifier, T>> reloadListener, Identifier... dependencies) {
+        return datapackResource(resourceId, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener, dependencies);
     }
 
     /**
@@ -167,33 +167,34 @@ public interface SimpleResources {
      * @param resourceId The identifier of the resource, the namespace should be the mod id, the path should be the resource name (something like minecraft's "advancement", "recipe" or "tags")
      * @param readWriter The ResourceReadWriter used for reading/writing the resource into the file
      * @param reloadListener Invoked after this data pack resource has been reloaded
+     * @param dependencies A list of fabric resources which need to be loaded before this resource can be loaded
      * @return The key used to access the currently loaded values
      * */
-    static<T> ResourceKey<Map<Identifier, T>> datapackResource(Identifier resourceId, ResourceReadWriter<T> readWriter, Consumer<Map<Identifier, T>> reloadListener) {
-        return new MinecraftResource<>(resourceId, readWriter, ResourceType.SERVER_DATA, reloadListener);
+    static<T> ResourceKey<Map<Identifier, T>> datapackResource(Identifier resourceId, ResourceReadWriter<T> readWriter, Consumer<Map<Identifier, T>> reloadListener, Identifier... dependencies) {
+        return new MinecraftResource<>(resourceId, readWriter, ResourceType.SERVER_DATA, reloadListener, dependencies);
     }
 
     /**
-     * Overload of {@link SimpleResources#resourcepackResource(Identifier, Codec, Consumer)}, but without a reload listener
+     * Overload of {@link SimpleResources#resourcepackResource(Identifier, Codec, Consumer, Identifier[])}, but without a reload listener
      * */
-    static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, Codec<T> codec) {
-        return resourcepackResource(resourceId, codec, newValues -> {});
+    static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, Codec<T> codec, Identifier... dependencies) {
+        return resourcepackResource(resourceId, codec, newValues -> {}, dependencies);
     }
 
     /**
-     * Overload of {@link SimpleResources#resourcepackResource(Identifier, ResourceReadWriter, Consumer)}, which takes in
+     * Overload of {@link SimpleResources#resourcepackResource(Identifier, ResourceReadWriter, Consumer, Identifier[])}, which takes in
      * a codec for serializing/deserializing the class
      * */
-    static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, Codec<T> codec, Consumer<Map<Identifier, T>> reloadListener) {
-        return resourcepackResource(resourceId, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener);
+    static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, Codec<T> codec, Consumer<Map<Identifier, T>> reloadListener, Identifier... dependencies) {
+        return resourcepackResource(resourceId, new CodecResourceReadWriter<>(codec, extension -> true), reloadListener, dependencies);
     }
 
     /**
-     * Same as {@link SimpleResources#datapackResource(Identifier, ResourceReadWriter, Consumer)}, but instead of loading from a data pack it loads from a resource pack.
+     * Same as {@link SimpleResources#datapackResource(Identifier, ResourceReadWriter, Consumer, Identifier[])}, but instead of loading from a data pack it loads from a resource pack.
      * That means it also gets reloaded when resource packs are reloaded and not when data packs are reloaded
      * */
-    static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, ResourceReadWriter<T> readWriter, Consumer<Map<Identifier, T>> reloadListener) {
-        return new MinecraftResource<>(resourceId, readWriter, ResourceType.CLIENT_RESOURCES, reloadListener);
+    static<T> ResourceKey<Map<Identifier, T>> resourcepackResource(Identifier resourceId, ResourceReadWriter<T> readWriter, Consumer<Map<Identifier, T>> reloadListener, Identifier... dependencies) {
+        return new MinecraftResource<>(resourceId, readWriter, ResourceType.CLIENT_RESOURCES, reloadListener, dependencies);
     }
 
     /**

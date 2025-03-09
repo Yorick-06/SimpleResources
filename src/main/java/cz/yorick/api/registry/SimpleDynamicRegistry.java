@@ -32,9 +32,9 @@ public class SimpleDynamicRegistry<K, V> extends SimpleRegistry<K, V> {
      * Creates a data pack resource and wraps it in a dynamic registry.
      * Any time the resource gets reloaded, the registries values get updated
      * */
-    public static <T> SimpleDynamicRegistry<Identifier, T> ofDatapackResource(Identifier id, Codec<T> codec) {
+    public static <T> SimpleDynamicRegistry<Identifier, T> ofDatapackResource(Identifier id, Codec<T> codec, Identifier... dependencies) {
         SimpleDynamicRegistry<Identifier, T> dynamicRegistry = new SimpleDynamicRegistry<>(id, Identifier.CODEC);
-        SimpleResources.datapackResource(id, codec, dynamicRegistry::reload);
+        SimpleResources.datapackResource(id, codec, dynamicRegistry::reload, dependencies);
         return dynamicRegistry;
     }
 
@@ -42,9 +42,9 @@ public class SimpleDynamicRegistry<K, V> extends SimpleRegistry<K, V> {
      * Creates a resource pack resource and wraps it in a dynamic registry.
      * Any time the resource gets reloaded, the registries values get updated
      * */
-    public static <T> SimpleDynamicRegistry<Identifier, T> ofResourcepackResource(Identifier id, Codec<T> codec) {
+    public static <T> SimpleDynamicRegistry<Identifier, T> ofResourcepackResource(Identifier id, Codec<T> codec, Identifier... dependencies) {
         SimpleDynamicRegistry<Identifier, T> dynamicRegistry = new SimpleDynamicRegistry<>(id, Identifier.CODEC);
-        SimpleResources.resourcepackResource(id, codec, dynamicRegistry::reload);
+        SimpleResources.resourcepackResource(id, codec, dynamicRegistry::reload, dependencies);
         return dynamicRegistry;
     }
 }
