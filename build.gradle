@@ -37,11 +37,11 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	//for testing with toml
-	modImplementation "maven.modrinth:toml-resources:1.0.0"
+	modImplementation "maven.modrinth:toml-resources:2.0.0"
 	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.4"
 
 	//for testing with yaml
-	modImplementation "maven.modrinth:yaml-resources:1.0.0"
+	modImplementation "maven.modrinth:yaml-resources:2.0.0"
 	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.4"
 }
 
