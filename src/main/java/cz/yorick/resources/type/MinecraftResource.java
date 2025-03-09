@@ -15,26 +15,21 @@ import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
     private final Consumer<Map<Identifier, T>> reloadListener;
     private Map<Identifier, T> loadedValue = ImmutableMap.of();
-    public MinecraftResource(Identifier id, ResourceReadWriter<T> readWriter, ResourceType resourceType, Consumer<Map<Identifier, T>> reloadListener) {
+    public MinecraftResource(Identifier id, ResourceReadWriter<T> readWriter, ResourceType resourceType, Consumer<Map<Identifier, T>> reloadListener, Identifier... dependencies) {
         this.reloadListener = reloadListener;
-        ResourceManagerHelper.get(resourceType).registerReloadListener(id, wrapperLookup -> new SimpleSynchronousResourceReloadListener() {
-            @Override
-            public Identifier getFabricId() {
-                return id;
-            }
+        //client resources cannot have the wrapper lookup
+        if(resourceType == ResourceType.CLIENT_RESOURCES) {
+            ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(getListener(id, readWriter, null, dependencies));
+            return;
+        }
 
-            @Override
-            public void reload(ResourceManager manager) {
-                parse(id.getPath(), manager, readWriter, wrapperLookup);
-            }
-        });
+        ResourceManagerHelper.get(resourceType).registerReloadListener(id, wrapperLookup -> getListener(id, readWriter, wrapperLookup, dependencies));
     }
 
     @Override
@@ -70,5 +65,25 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
 
         this.loadedValue = ImmutableMap.copyOf(results);
         this.reloadListener.accept(this.loadedValue);
+    }
+
+    private SimpleSynchronousResourceReloadListener getListener(Identifier id, ResourceReadWriter<T> readWriter, RegistryWrapper.WrapperLookup lookup, Identifier... dependencies) {
+        List<Identifier> fabricDependencies = Arrays.stream(dependencies).toList();
+        return new SimpleSynchronousResourceReloadListener() {
+            @Override
+            public Identifier getFabricId() {
+                return id;
+            }
+
+            @Override
+            public void reload(ResourceManager manager) {
+                parse(id.getPath(), manager, readWriter, lookup);
+            }
+
+            @Override
+            public Collection<Identifier> getFabricDependencies() {
+                return fabricDependencies;
+            }
+        };
     }
 }
