@@ -9,6 +9,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import cz.yorick.SimpleResourcesCommon;
+import cz.yorick.api.FileTypeInitializer;
 import cz.yorick.api.resources.ResourceReadWriter;
 import net.minecraft.registry.RegistryOps;
 import net.minecraft.registry.RegistryWrapper;
@@ -66,14 +67,16 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
     static {
         dynamicOpsRegistry.put("json", new DynamicOpsParser<>(JsonOps.INSTANCE, JsonParser::parseReader, CodecResourceReadWriter::writeJson));
     }
-    public static <T> void registerOps(String fileExtension, DynamicOps<T> ops, OpsReader<T> readerParser, OpsWriter<T> writer) {
+    public static <T> void registerOps(FileTypeInitializer<T> initializer) {
+        String fileExtension = initializer.getExtension();
         if(dynamicOpsRegistry.containsKey(fileExtension)) {
             SimpleResourcesCommon.LOGGER.warn("Attempted to register duplicate DynamicOps for file extension '." + fileExtension + "' ignoring register call - keeping original");
             return;
         }
 
-        dynamicOpsRegistry.put(fileExtension, new DynamicOpsParser<>(ops, readerParser, writer));
-        extraOps.put(fileExtension, new DynamicOpsParser<>(ops, readerParser, writer));
+        DynamicOpsParser<T> opsParser = new DynamicOpsParser<>(initializer.getOps(), initializer::read, initializer::write);
+        dynamicOpsRegistry.put(fileExtension, opsParser);
+        extraOps.put(fileExtension, opsParser);
     }
 
     public static Map<String, DynamicOpsParser<?>> getExtraOps() {

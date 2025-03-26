@@ -39,7 +39,6 @@ import java.util.function.Predicate;
 public abstract class SimpleResourcesCommand<S extends CommandSource> {
     private final BiConsumer<S, Text> feedbackSender;
     protected SimpleResourcesCommand(CommandDispatcher<S> dispatcher, String commandName, BiConsumer<S, Text> feedbackSender, Predicate<S> canExecute) {
-        System.out.println("command init " + this.getClass());
         this.feedbackSender = feedbackSender;
         dispatcher.register(literal(commandName).requires(canExecute)
             .then(literal("reload")
