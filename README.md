@@ -21,16 +21,17 @@ repositories {
 }
 
 dependencies {
-	modImplementation "maven.modrinth:simple-resources:2.2.1+1.21.4"
+	modImplementation "maven.modrinth:simple-resources:[version]"
 }
 ```
 Since it is a small library, you can include it in your mods jar file
 ```
 dependencies {
-	modImplementation include("maven.modrinth:simple-resources:2.2.1+1.21.4")
+	modImplementation include("maven.modrinth:simple-resources:[version]")
 }
 ```
 
-You can also replace ```2.2.1+1.21.4``` with ```2.2.1+1.21.1``` to get the version for minecraft 1.21.1
+```[version]``` should be replaced with a valid version consisting of ```mod_version+mc_version```, a list can be found
+in github releases or on modrinth - example ```2.2.1+1.21.5```
 
 ## [Check out the wiki!](https://github.com/Yorick-06/SimpleResources/wiki)
