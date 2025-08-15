@@ -53,7 +53,7 @@ public interface ResourceUtil {
     }
 
     /**
-     * Executes a function - adds withLevel(2) and withSilent()
+     * Executes a function - adds withLevel(4) and withSilent()
      * @param source Source to execute as
      * @param functionId Id of the function
      * @return true if the function was executed, false otherwise
@@ -63,14 +63,14 @@ public interface ResourceUtil {
     }
 
     /**
-     * Executes a function - adds withLevel(2) and withSilent()
+     * Executes a function - adds withLevel(4) and withSilent()
      * @param source Source to execute as
      * @param functionId Id of the function
      * @param returnValueConsumer Consumer for the return value of the function
      * @return true if the function was executed, false otherwise
      * */
     static boolean executeFunction(ServerCommandSource source, Identifier functionId, ReturnValueConsumer returnValueConsumer) {
-        return executeRawFunction(source.withLevel(2).withSilent().mergeReturnValueConsumers(returnValueConsumer, ReturnValueConsumer::chain), functionId);
+        return executeRawFunction(source.withLevel(4).withSilent().mergeReturnValueConsumers(returnValueConsumer, ReturnValueConsumer::chain), functionId);
     }
 
     /**
@@ -84,7 +84,7 @@ public interface ResourceUtil {
     }
 
     /**
-     * Executes a macro function - adds withLevel(2) and withSilent()
+     * Executes a macro function - adds withLevel(4) and withSilent()
      * @param source Source to execute as
      * @param functionId Id of the function
      * @param data The data to execute the function with
@@ -95,7 +95,7 @@ public interface ResourceUtil {
     }
 
     /**
-     * Executes a macro function - adds withLevel(2) and withSilent()
+     * Executes a macro function - adds withLevel(4) and withSilent()
      * @param source Source to execute as
      * @param functionId Id of the function
      * @param data The data to execute the function with
@@ -103,7 +103,7 @@ public interface ResourceUtil {
      * @return true if the function was executed, false otherwise
      * */
     static boolean executeMacroFunction(ServerCommandSource source, Identifier functionId, NbtCompound data, ReturnValueConsumer returnValueConsumer) {
-        return executeRawMacroFunction(source.withLevel(2).withSilent().mergeReturnValueConsumers(returnValueConsumer, ReturnValueConsumer::chain), functionId, data);
+        return executeRawMacroFunction(source.withLevel(4).withSilent().mergeReturnValueConsumers(returnValueConsumer, ReturnValueConsumer::chain), functionId, data);
     }
 
     /**
@@ -118,7 +118,7 @@ public interface ResourceUtil {
     }
 
     /**
-     * Executes a command - adds withLevel(2) and withSilent()
+     * Executes a command - adds withLevel(4) and withSilent()
      * @param source Source to execute as
      * @param command The command
      * */
@@ -127,13 +127,13 @@ public interface ResourceUtil {
     }
 
     /**
-     * Executes a command - adds withLevel(2) and withSilent()
+     * Executes a command - adds withLevel(4 and withSilent()
      * @param source Source to execute as
      * @param command The command
      * @param returnValueConsumer Consumer for the return value of the function
      * */
     static void executeCommand(ServerCommandSource source, String command, ReturnValueConsumer returnValueConsumer) {
-        executeRawCommand(source.withLevel(2).withSilent().mergeReturnValueConsumers(returnValueConsumer, ReturnValueConsumer::chain), command);
+        executeRawCommand(source.withLevel(4).withSilent().mergeReturnValueConsumers(returnValueConsumer, ReturnValueConsumer::chain), command);
     }
 
     /**
