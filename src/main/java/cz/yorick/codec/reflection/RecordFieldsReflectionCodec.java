@@ -13,9 +13,7 @@ import net.minecraft.util.dynamic.Codecs;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.RecordComponent;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -85,16 +83,29 @@ public class RecordFieldsReflectionCodec<C, T extends C> extends FieldsReflectio
     public DataResult<T> createWithValues(Map<String, Object> values) {
         Object[] constructorParams = new Object[this.canonicalConstructor.getParameterCount()];
         T defaultInstance = null;
+        List<String> errors = new ArrayList<>();
         int i = 0;
         for (Map.Entry<String, SerializableField> entry : this.classFields.entrySet()) {
             Object value = values.get(entry.getKey());
             if(value == null) {
                 if(entry.getValue().required()) {
-                    return DataResult.error(() -> "Missing a required key: '" + entry.getKey() + "'");
+                    //try to create a default instance if missing
+                    if(defaultInstance == null && this.defaultFactory != null) {
+                        defaultInstance = this.defaultFactory.get();
+                    }
+
+                    //if creation failed, return an error
+                    if(defaultInstance == null) {
+                        return DataResult.error(() -> "Missing a required key: '" + entry.getKey() + "'");
+                    }
+
+                    //otherwise add an error and let the default get assigned
+                    errors.add("Missing a required key: '" + entry.getKey() + "'");
                 }
 
-                //if the value is optional, copy it from a default instance
-                //first optional field, don't always create since defaultFactory can be null
+                //if the value is optional, copy it from a default instance - factory cannot be null when an
+                //optional field is present, don't always create since defaultFactory can be null for records
+                //without optional fields
                 if(defaultInstance == null) {
                     defaultInstance = this.defaultFactory.get();
                 }
@@ -107,7 +118,13 @@ public class RecordFieldsReflectionCodec<C, T extends C> extends FieldsReflectio
         }
 
         try {
-            return DataResult.success(this.canonicalConstructor.newInstance(constructorParams));
+            T result = this.canonicalConstructor.newInstance(constructorParams);
+            this.postProcessor.apply(result);
+            //return as partial if errors were present
+            if(!errors.isEmpty()) {
+                return DataResult.error(() -> String.join(" | ", errors), result);
+            }
+            return this.postProcessor.apply(result);
         } catch (Exception e) {
             SimpleResourcesCommon.LOGGER.error("Could not run the constructor: ", e);
             return DataResult.error(() -> "Could not run the constructor - check the log for details");

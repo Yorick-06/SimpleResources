@@ -69,26 +69,23 @@ public class ClassFieldsReflectionCodec<C, T extends C> extends FieldsReflection
 
     @Override
     protected DataResult<T> createWithValues(Map<String, Object> values) {
-        //get the missing keys by removing the received keys
-        //from the field keys.
-        //key set reflects its changes into the map so get a copy
-        Set<String> missingKeys = new HashSet<>(this.classFields.keySet());
-        missingKeys.removeAll(values.keySet());
-        for (String missingKey : missingKeys) {
-            //if the key is required, throw an exception
-            if(this.classFields.get(missingKey).required()) {
-                return DataResult.error(() -> "Missing a required key: '" + missingKey + "'");
+        T instance = this.defaultFactory.get();
+        List<String> errors = new ArrayList<>();
+        for (Map.Entry<String, SerializableField> entry : this.classFields.entrySet()) {
+            Object value = values.get(entry.getKey());
+            if(value == null) {
+                if(entry.getValue().required()) {
+                    errors.add("Missing a required key: '" + entry.getKey() + "'");
+                }
+
+                continue;
             }
+
+            entry.getValue().set(instance, value);
         }
 
-        T instance = this.defaultFactory.get();
-        for (Map.Entry<String, Object> entry : values.entrySet()) {
-            SerializableField serializableField = this.classFields.get(entry.getKey());
-            if(serializableField == null) {
-                return DataResult.error(() -> "Key '" + entry.getKey() + "' does not represent a valid field!");
-            }
-
-            serializableField.set(instance, entry.getValue());
+        if(!errors.isEmpty()) {
+            return DataResult.error(() -> String.join(" | "), instance);
         }
 
         return this.postProcessor.apply(instance);
