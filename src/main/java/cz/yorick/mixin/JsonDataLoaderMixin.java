@@ -40,7 +40,7 @@ public class JsonDataLoaderMixin {
     private static <T> void loadCustom(ResourceManager resourceManager, ResourceFinder finder, CodecResourceReadWriter.DynamicOpsParser<?> parser, Codec<T> codec, Map<Identifier, T> results) {
         for(Map.Entry<Identifier, Resource> entry : finder.findResources(resourceManager).entrySet()) {
             try {
-                T parsed = parser.parse(entry.getValue().getReader(), codec);
+                T parsed = parser.parse(entry.getValue().getReader(), codec).getOrThrow();
                 Identifier loadedKey = finder.toResourceId(entry.getKey());
                 if (results.containsKey(loadedKey) && !SimpleResourcesCommon.getPreferredFormat().equals(ResourceUtil.getFileExtension(entry.getKey()))) {
                     ErrorUtil.reloadWarning("Duplicate data file ignored with ID " + loadedKey + " (path " + entry.getKey() + ")");

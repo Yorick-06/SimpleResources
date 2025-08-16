@@ -34,7 +34,7 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
     }
 
     @Override
-    public T read(String fileExtension, Reader reader, @Nullable RegistryWrapper.WrapperLookup wrapperLookup) throws Exception {
+    public DataResult<T> read(String fileExtension, Reader reader, @Nullable RegistryWrapper.WrapperLookup wrapperLookup) throws Exception {
         DynamicOpsParser<?> parser = dynamicOpsRegistry.get(fileExtension);
         if(parser == null) {
             throw new IllegalArgumentException("File cannot be parsed - no dynamic ops registered for file extension '." + fileExtension + "', if you wish to use custom extensions register them with SimpleResources#registerOps");
@@ -104,8 +104,8 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
     }
 
     public record DynamicOpsParser<T>(DynamicOps<T> ops, OpsReader<T> readerParser, OpsWriter<T> writer) {
-        public <V> V parse(Reader reader, Codec<V> codec) throws Exception {
-            return codec.parse(this.ops, this.readerParser.read(reader)).getOrThrow();
+        public <V> DataResult<V> parse(Reader reader, Codec<V> codec) throws Exception {
+            return codec.parse(this.ops, this.readerParser.read(reader));
         }
 
         public <V> void write(Writer writer, V value, Codec<V> codec) throws Exception {

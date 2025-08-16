@@ -85,7 +85,10 @@ public class ClassFieldsReflectionCodec<C, T extends C> extends FieldsReflection
         }
 
         if(!errors.isEmpty()) {
-            return DataResult.error(() -> String.join(" | "), instance);
+
+            DataResult<T> result = DataResult.error(() -> String.join(" | ", errors), instance);
+            result.error().ifPresent(err -> System.out.println("Class fields codec sending error: " + err.message()));
+            return result;
         }
 
         return this.postProcessor.apply(instance);

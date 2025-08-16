@@ -35,6 +35,8 @@ public class ErrorUtil {
             feedbackConsumer.accept(throwable.getMessage());
             throwable = throwable.getCause();
         }
+
+        SimpleResourcesCommon.LOGGER.error("[ErrorUtil] sending error to chat", error);
     }
 
     public static void reloadWarning(String message) {

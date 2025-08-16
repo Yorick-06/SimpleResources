@@ -9,6 +9,7 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.serialization.DataResult;
 import cz.yorick.api.resources.ResourceReadWriter;
 import cz.yorick.resources.ErrorUtil;
 import cz.yorick.resources.ResourceParseException;
@@ -31,6 +32,7 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -55,6 +57,11 @@ public abstract class SimpleResourcesCommand<S extends CommandSource> {
                             .executes(context -> convertConfig(context.getSource(), StringArgumentType.getString(context, "format"), context.getArgument("id", Identifier.class), StringArgumentType.getString(context, "path")))
                         )
                     )
+                )
+            )
+            .then(literal("repair")
+                .then(argument("config", IdentifierArgumentType.identifier()).suggests(this::suggestConfigResources)
+                    .executes(context -> repairConfig(context.getSource(), context.getArgument("config", Identifier.class)))
                 )
             )
         );
@@ -106,7 +113,7 @@ public abstract class SimpleResourcesCommand<S extends CommandSource> {
         }
 
         ResourceReadWriter<?> readWriter = config.getReadWriter();
-        if(readWriter instanceof CodecResourceReadWriter<?> codecResourceReadWriter) {
+        if(readWriter instanceof CodecResourceReadWriter<?>) {
             return convertPath(source, format,  config.getFile().toPath(), path);
         }
 
@@ -215,9 +222,55 @@ public abstract class SimpleResourcesCommand<S extends CommandSource> {
             Files.delete(original.toPath());
             return 1;
         } catch (Exception e) {
-            ErrorUtil.sendStackTrace(new ResourceParseException("Error while converting the file " + original.getName(), e), message -> sendError(source, message));
+            handleError(source, new ResourceParseException("Error while converting the file " + original.getName(), e));
             return 0;
         }
+    }
+
+    private int repairConfig(S source, Identifier id) {
+        SimpleResource<?> resource = Util.getResource(id);
+        if(resource == null) {
+            sendError(source, "Config resource " + id + " does not exist");
+            return 0;
+        }
+
+        File file = resource.getFile();
+        if(!file.exists()) {
+            sendError(source, "File for config " + id + " is missing, reload the config to generate a new one");
+            return 0;
+        }
+        try {
+            return rewriteConfig(source, resource.getReadWriter(), file);
+        } catch (Exception e) {
+            handleError(source, new ResourceParseException("Error while attempting to repair the config " + id, e));
+            return 0;
+        }
+    }
+
+    private <R> int rewriteConfig(S source, ResourceReadWriter<R> readWriter, File file) throws Exception {
+        String fileExtension = Util.getFileExtension(file.getName());
+
+        FileReader reader = new FileReader(file);
+        DataResult<R> result = readWriter.read(fileExtension, reader, null);
+        reader.close();
+
+        if(result.isSuccess()) {
+            sendSuccess(source, "Config loaded as a success and does not need repairs");
+            return 1;
+        }
+
+        Optional<R> partial = result.resultOrPartial();
+        if(partial.isEmpty()) {
+            sendError(source, "Could not load a partial result, repair failed");
+            return 0;
+        }
+
+        FileWriter writer = new FileWriter(file);
+        readWriter.write(fileExtension, writer, partial.get());
+        writer.close();
+
+        sendSuccess(source, "Wrote the partial result back to the file");
+        return 1;
     }
 
     public void handleError(S source, Exception error) {

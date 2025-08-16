@@ -39,7 +39,7 @@ public class ResourceFileLoader<T> implements SimpleResource.Loader<T> {
                 SimpleResourcesCommon.LOGGER.info("Wrote default data to file " + newFile);
                 return defaultValue;
             }
-            return this.readWriter.read(Util.getFileExtensionOrThrow(Util.pathToString(path)), new FileReader(file));
+            return this.readWriter.read(Util.getFileExtensionOrThrow(Util.pathToString(path)), new FileReader(file), null).getOrThrow();
         } catch (Throwable e) {
             errorHandler.accept(new ResourceParseException("Error while loading the file " + SimpleResource.Loader.getRelativePath(path), e));
             return this.defaultFactory.get();
@@ -98,7 +98,7 @@ public class ResourceFileLoader<T> implements SimpleResource.Loader<T> {
         }
 
         //if there is at least 1 valid file, use the first one
-        if(validFiles.size() > 0) {
+        if(!validFiles.isEmpty()) {
             return path.resolve(validFiles.getFirst());
         }
 
