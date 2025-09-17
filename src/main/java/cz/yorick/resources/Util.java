@@ -13,6 +13,11 @@ import java.util.function.Supplier;
 
 public class Util {
     public static<T> Supplier<T> factoryFor(Class<T> clazz) {
+        //null factory for record codec, this is used later in RecordFieldsReflectionCodec
+        if(clazz.isRecord()) {
+            return null;
+        }
+
         try {
             Constructor<T> constructor = clazz.getDeclaredConstructor();
             constructor.setAccessible(true);

@@ -8,7 +8,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Used to mark fields which should be ignored by {@link ClassFieldsCodec}
+ * Used to mark fields which should be ignored by {@link ClassFieldsCodec},
+ * does not work if the class is a record
  * */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

@@ -9,6 +9,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import cz.yorick.SimpleResourcesCommon;
+import cz.yorick.api.FileTypeInitializer;
 import cz.yorick.api.resources.ResourceReadWriter;
 import net.minecraft.registry.RegistryOps;
 import net.minecraft.registry.RegistryWrapper;
@@ -33,7 +34,7 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
     }
 
     @Override
-    public T read(String fileExtension, Reader reader, @Nullable RegistryWrapper.WrapperLookup wrapperLookup) throws Exception {
+    public DataResult<T> read(String fileExtension, Reader reader, @Nullable RegistryWrapper.WrapperLookup wrapperLookup) throws Exception {
         DynamicOpsParser<?> parser = dynamicOpsRegistry.get(fileExtension);
         if(parser == null) {
             throw new IllegalArgumentException("File cannot be parsed - no dynamic ops registered for file extension '." + fileExtension + "', if you wish to use custom extensions register them with SimpleResources#registerOps");
@@ -66,14 +67,16 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
     static {
         dynamicOpsRegistry.put("json", new DynamicOpsParser<>(JsonOps.INSTANCE, JsonParser::parseReader, CodecResourceReadWriter::writeJson));
     }
-    public static <T> void registerOps(String fileExtension, DynamicOps<T> ops, OpsReader<T> readerParser, OpsWriter<T> writer) {
+    public static <T> void registerOps(FileTypeInitializer<T> initializer) {
+        String fileExtension = initializer.getExtension();
         if(dynamicOpsRegistry.containsKey(fileExtension)) {
             SimpleResourcesCommon.LOGGER.warn("Attempted to register duplicate DynamicOps for file extension '." + fileExtension + "' ignoring register call - keeping original");
             return;
         }
 
-        dynamicOpsRegistry.put(fileExtension, new DynamicOpsParser<>(ops, readerParser, writer));
-        extraOps.put(fileExtension, new DynamicOpsParser<>(ops, readerParser, writer));
+        DynamicOpsParser<T> opsParser = new DynamicOpsParser<>(initializer.getOps(), initializer::read, initializer::write);
+        dynamicOpsRegistry.put(fileExtension, opsParser);
+        extraOps.put(fileExtension, opsParser);
     }
 
     public static Map<String, DynamicOpsParser<?>> getExtraOps() {
@@ -101,8 +104,8 @@ public class CodecResourceReadWriter<T> implements ResourceReadWriter<T> {
     }
 
     public record DynamicOpsParser<T>(DynamicOps<T> ops, OpsReader<T> readerParser, OpsWriter<T> writer) {
-        public <V> V parse(Reader reader, Codec<V> codec) throws Exception {
-            return codec.parse(this.ops, this.readerParser.read(reader)).getOrThrow();
+        public <V> DataResult<V> parse(Reader reader, Codec<V> codec) throws Exception {
+            return codec.parse(this.ops, this.readerParser.read(reader));
         }
 
         public <V> void write(Writer writer, V value, Codec<V> codec) throws Exception {

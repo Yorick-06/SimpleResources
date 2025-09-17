@@ -41,9 +41,7 @@ public class SimpleResourcesCommon implements ModInitializer {
 	public static void ensureRegistered() {
 		if(!loadedConfig) {
 			loadedConfig = true;
-			FabricLoader.getInstance().invokeEntrypoints(MOD_ID + ":file_type", FileTypeInitializer.class,
-					initializer -> CodecResourceReadWriter.registerOps(initializer.getExtension(), initializer.getOps(), initializer::read, initializer::write)
-			);
+			FabricLoader.getInstance().invokeEntrypoints(MOD_ID + ":file_type", FileTypeInitializer.class, CodecResourceReadWriter::registerOps);
 			MapCodec<Pair<String, Boolean>> codec = RecordCodecBuilder.mapCodec(instance -> instance.group(
 				Codecs.NON_EMPTY_STRING.fieldOf("preferred_format").forGetter(Pair::getFirst),
 				Codec.BOOL.fieldOf("broadcast_reload_errors").forGetter(Pair::getSecond)

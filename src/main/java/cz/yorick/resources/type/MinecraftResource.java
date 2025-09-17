@@ -43,7 +43,7 @@ public class MinecraftResource<T> implements ResourceKey<Map<Identifier, T>> {
             try {
                 Identifier originalKey = entry.getKey();
                 String fileExtension = Util.getFileExtensionOrThrow(originalKey.getPath());
-                T parsed = readWriter.read(fileExtension, entry.getValue().getReader(), wrapperLookup);
+                T parsed = readWriter.read(fileExtension, entry.getValue().getReader(), wrapperLookup).getOrThrow();
                 //converts
                 //namespace:resource_name/file_name.extension -> namespace:file_name.extension
                 //namespace:resource_name/directory/file_name.extension -> namespace:directory/file_name.extension

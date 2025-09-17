@@ -1,5 +1,6 @@
 package cz.yorick.api.resources;
 
+import com.mojang.serialization.DataResult;
 import net.minecraft.registry.RegistryWrapper;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,14 +15,11 @@ public interface ResourceReadWriter<T> {
      * Reads the file
      * @param fileExtension The extension of the file
      * @param reader The reader of the file
+     * @param lookup Minecraft's registry lookup (if present in the context)
      * @return The value parsed from this file
      * @throws Exception If an exception occurred while parsing the file
      * */
-    default T read(String fileExtension, Reader reader) throws Exception {
-        return read(fileExtension, reader, null);
-    }
-
-    T read(String fileExtension, Reader reader, @Nullable RegistryWrapper.WrapperLookup lookup) throws Exception;
+    DataResult<T> read(String fileExtension, Reader reader, @Nullable RegistryWrapper.WrapperLookup lookup) throws Exception;
     /**
      * Writes to the file
      * @param fileExtension The extension of the file
